@@ -1,0 +1,130 @@
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="css/base.css" />
+  <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+  <script>
+    var shapes = [];
+    var opeflag = true
+    var isShaping = false;
+    
+    // 読み込みが終わってから初期化
+    window.addEventListener("load", init);
+    function init() {
+        var stage = new createjs.Stage("myCanvas");
+        var canvas = document.getElementById('myCanvas');
+        canvas.addEventListener('mousedown', handleDown, false);
+        canvas.addEventListener('mouseup', handleMouseup, false);
+
+        var dragPointX
+        var dragPointY
+        createjs.Ticker.addEventListener("tick", handleTick);
+        function handleTick() {
+          stage.update(); // 画面更新
+        }
+        function handleDown(e) {
+            if(!opeflag)return
+            if(!isShaping)return
+            // ドラッグを開始した座標を覚えておく
+            var rect = e.target.getBoundingClientRect();
+            dragPointX = e.clientX - rect.left;
+            dragPointY = e.clientY - rect.top;
+        }
+        function handleMousemove(e){
+            if(!opeflag)return
+            if(!isShaping)return
+            var rect = e.target.getBoundingClientRect();
+            new Rectengle(
+            dragPointX,
+            dragPointY,
+            e.clientX - rect.left-dragPointX,
+            e.clientY - rect.top-dragPointY,
+            "Yellow") 
+            .init(stage)
+        }
+        function handleMouseup(e){
+            if(!opeflag)return
+            if(!isShaping)return
+            var rect = e.target.getBoundingClientRect();
+            new Rectengle(
+            dragPointX,
+            dragPointY,
+            e.clientX - rect.left-dragPointX,
+            e.clientY - rect.top-dragPointY,
+            "Yellow") 
+            .init(stage)
+        }
+    }
+    
+    
+    function Rectengle(start_x,start_y,end_x,end_y,color){
+        this.width=end_x-start_x
+        this.height=end_y-start_y
+        this.color=color
+        this.start_x=start_x
+        this.start_y=start_y
+        this.end_x=end_x
+        this.end_y=end_y
+        this.shape
+        
+        this.init = function(stage){
+            // 初期化
+            //　ボールを作成
+            this.shape = new createjs.Shape();
+            this.shape.graphics.beginFill(color)
+            .drawRect(this.start_x,this.start_y,this.end_x,this.end_y);
+            // ドラッグした場所を保存する変数
+            var dragPointX;
+            var dragPointY;
+	        stage.addChild(this.shape);
+            
+            // インタラクティブの設定 drawShape
+            this.shape.addEventListener("mousedown", handleDown);
+            this.shape.addEventListener("pressmove", handleMove);
+            this.shape.addEventListener("pressup", handleUp);
+            
+            var _self = this;
+            // ボールを押したときの処理です
+            function handleDown(event) {
+              opeflag = false
+              // ドラッグを開始した座標を覚えておく
+              dragPointX = stage.mouseX - _self.shape.x;
+              dragPointY = stage.mouseY - _self.shape.y;
+              // ボールを半透明にする
+              _self.shape.alpha = 0.5;
+            }
+            // ボールを押した状態で動かしたときの処理です
+            function handleMove(event) {
+              opeflag = false
+              // ボールはマウス座標に追随する
+              // ただしドラッグ開始地点との補正をいれておく
+              _self.shape.x = stage.mouseX - dragPointX;
+              _self.shape.y = stage.mouseY - dragPointY;
+            }
+            // ボールからマウスを離したときの処理です
+            function handleUp(event) {
+              // ボールを元の透明度に戻す
+              opeflag = true
+              _self.shape.alpha = 1.0;
+            }
+            // 時間経過
+            createjs.Ticker.addEventListener("tick", handleTick);
+            function handleTick() {
+              stage.update(); // 画面更新
+            }
+        }
+        
+    }
+    
+    function doaction(){
+        
+    }
+  </script>
+</head>
+<body>
+  <canvas id="myCanvas" width="960" height="540"></canvas><br>
+  <input type = button  value = "図形追加 ON" onclick="isShaping = true">
+  <input type = button  value = "図形追加 OFF" onclick="isShaping = false">
+  <input type = button  value = "図形移動" onclick="move()">
+</body>
+</html>
