@@ -4,55 +4,90 @@
   <link rel="stylesheet" href="css/base.css" />
   <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
   <script>
-    var shapes = [];
-    var opeflag = true
-    var isShaping = false;
+    var myCanvasHander= new MyCanvasHander()
+    var sOpe = new ShapeOperationToCanvas()
+    function addOperation(){
+        var funcs ={
+            mousedown:{handleDown:myCanvasHander.handleDown},
+            mousemove:{handleMousemove:myCanvasHander.handleMousemove},
+            mouseup:{handleMouseup:myCanvasHander.handleMouseup}
+        }
+            var canvas = document.getElementById('myCanvas');
+            canvas.addEventListener('mousedown', funcs['mousedown']['handleDown'], false);
+            //canvas.addEventListener('mousemove', funcs['mousemove']['handleMousemove'], false);
+            canvas.addEventListener('mouseup', funcs['mouseup']['handleMouseup'], false);
+    }
+    function removeOperation(){sOpe.removeOperation()}
     
-    // 読み込みが終わってから初期化
-    window.addEventListener("load", init);
-    function init() {
+    function MyCanvasHander(){
         var stage = new createjs.Stage("myCanvas");
-        var canvas = document.getElementById('myCanvas');
-        canvas.addEventListener('mousedown', handleDown, false);
-        canvas.addEventListener('mouseup', handleMouseup, false);
-
         var dragPointX
         var dragPointY
-        createjs.Ticker.addEventListener("tick", handleTick);
-        function handleTick() {
-          stage.update(); // 画面更新
-        }
-        function handleDown(e) {
-            if(!opeflag)return
-            if(!isShaping)return
+        var myshape
+        var mouseclickflag
+        
+        this.stage=function(){return stage;}
+        this.handleDown = function (e) {
             // ドラッグを開始した座標を覚えておく
             var rect = e.target.getBoundingClientRect();
             dragPointX = e.clientX - rect.left;
             dragPointY = e.clientY - rect.top;
+            mouseclickflag =true
         }
-        function handleMousemove(e){
-            if(!opeflag)return
-            if(!isShaping)return
+        this.handleMousemove = function (e){
+            if(!mouseclickflag)return
+            //if(myshape)stage.removeChild(myshape)
             var rect = e.target.getBoundingClientRect();
-            new Rectengle(
-            dragPointX,
-            dragPointY,
-            e.clientX - rect.left-dragPointX,
-            e.clientY - rect.top-dragPointY,
-            "Yellow") 
-            .init(stage)
+            console.log(dragPointX)
+            console.log(dragPointY)
+            console.log(e.clientX - rect.left)
+            console.log(e.clientY - rect.top)
+            //myshape.shape.x = e.clientX - rect.left-dragPointX;
+            //myshape.shape.y = e.clientY - rect.top-dragPointY;
+            //console.log(myshape.shape.y)
         }
-        function handleMouseup(e){
-            if(!opeflag)return
-            if(!isShaping)return
+        this.handleMouseup = function (e){
             var rect = e.target.getBoundingClientRect();
-            new Rectengle(
-            dragPointX,
-            dragPointY,
-            e.clientX - rect.left-dragPointX,
-            e.clientY - rect.top-dragPointY,
-            "Yellow") 
-            .init(stage)
+            myshape = new Rectengle(
+                dragPointX,
+                dragPointY,
+                e.clientX - rect.left,
+                e.clientY - rect.top,
+                "Yellow") 
+            myshape.init(stage)
+            mouseclickflag =false
+            
+        }
+    }
+    
+    
+    function ShapeOperationToCanvas(){
+        var funcs ={
+            mousedown:{handleDown:myCanvasHander.handleDown},
+//            mousemove:{handleMousemove:myCanvasHander.handleMousemove},
+            mouseup:{handleMouseup:myCanvasHander.handleMouseup}
+        }
+        this.addOperation = function(){
+            var canvas = document.getElementById('myCanvas');
+            canvas.addEventListener('mousedown', funcs['mousedown']['handleDown'], false);
+//            canvas.addEventListener('mousemove', funcs['mousemove']['handleMousemove'], false);
+            canvas.addEventListener('mouseup', funcs['mouseup']['handleMouseup'], false);
+        }
+        this.removeOperation =  function (){
+            var canvas = document.getElementById('myCanvas');
+            canvas.removeEventListener('mousedown', funcs['mousedown']['handleDown']);
+            canvas.removeEventListener('mousemove', funcs['mousemove']['handleMousemove']);
+            canvas.removeEventListener('mouseup', funcs['mouseup']['handleMouseup']);
+        }
+    }
+    
+    
+    // 込みが終わってから初期化
+    window.addEventListener("load", init);
+    function init() {
+        createjs.Ticker.addEventListener("tick", handleTick);
+        function handleTick() {
+          myCanvasHander.stage().update(); // 画面更新
         }
     }
     
@@ -76,8 +111,8 @@
             // ドラッグした場所を保存する変数
             var dragPointX;
             var dragPointY;
-	        stage.addChild(this.shape);
-            
+            stage.addChild(this.shape);
+            console.log('init')
             // インタラクティブの設定 drawShape
             this.shape.addEventListener("mousedown", handleDown);
             this.shape.addEventListener("pressmove", handleMove);
@@ -86,7 +121,7 @@
             var _self = this;
             // ボールを押したときの処理です
             function handleDown(event) {
-              opeflag = false
+              sOpe.removeOperation()
               // ドラッグを開始した座標を覚えておく
               dragPointX = stage.mouseX - _self.shape.x;
               dragPointY = stage.mouseY - _self.shape.y;
@@ -95,7 +130,6 @@
             }
             // ボールを押した状態で動かしたときの処理です
             function handleMove(event) {
-              opeflag = false
               // ボールはマウス座標に追随する
               // ただしドラッグ開始地点との補正をいれておく
               _self.shape.x = stage.mouseX - dragPointX;
@@ -104,7 +138,6 @@
             // ボールからマウスを離したときの処理です
             function handleUp(event) {
               // ボールを元の透明度に戻す
-              opeflag = true
               _self.shape.alpha = 1.0;
             }
             // 時間経過
@@ -116,15 +149,12 @@
         
     }
     
-    function doaction(){
-        
-    }
   </script>
 </head>
 <body>
   <canvas id="myCanvas" width="960" height="540"></canvas><br>
-  <input type = button  value = "図形追加 ON" onclick="isShaping = true">
-  <input type = button  value = "図形追加 OFF" onclick="isShaping = false">
+  <input type = button  value = "図形追加 ON" onclick="addOperation()">
+  <input type = button  value = "図形追加 OFF" onclick="removeOperation()">
   <input type = button  value = "図形移動" onclick="move()">
 </body>
 </html>
